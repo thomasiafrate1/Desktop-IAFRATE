@@ -3,6 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'pages/home_page.dart';
 import 'pages/login_page.dart';
+import 'package:provider/provider.dart';
+import 'services/timer_service.dart'; // 👈 très important
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,8 +16,15 @@ Future<void> main() async {
     authFlowType: AuthFlowType.pkce,
   );
 
-  runApp(const PomodoroApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => TimerService(),
+      child: const PomodoroApp(),
+    ),
+  );
 }
+
+
 
 class PomodoroApp extends StatelessWidget {
   const PomodoroApp({super.key});
