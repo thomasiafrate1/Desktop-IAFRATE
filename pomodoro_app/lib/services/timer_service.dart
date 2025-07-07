@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../models/session_model.dart';
 import 'supabase_service.dart';
 
@@ -16,9 +18,13 @@ class TimerService extends ChangeNotifier {
   Timer? _timer;
   bool _isRunning = false;
 
+  final _player = AudioPlayer();
+  final _notifications = FlutterLocalNotificationsPlugin();
+
   TimerService() {
     _currentType = SessionType.pomodoro;
     _loadCustomDurations();
+    _initializeNotifications();
   }
 
   SessionType get currentType => _currentType;
@@ -62,7 +68,7 @@ class TimerService extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _saveSession() async {
+  Future<void> _saveSession() async {
     final session = Session(
       startTime: DateTime.now(),
       duration: durations[_currentType]!,
@@ -70,6 +76,46 @@ class TimerService extends ChangeNotifier {
     );
 
     await SupabaseService.saveSession(session);
+
+    // 🔊 Son
+    await _player.play(AssetSource('sounds/ding.mp3'));
+
+    // 🔔 Notification (Android uniquement)
+    await _notifications.show(
+      0,
+      'Session terminée',
+      'La session ${_sessionLabel(_currentType)} est terminée.',
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'pomodoro_channel',
+          'Pomodoro Notifications',
+          channelDescription: 'Notification à la fin d\'une session Pomodoro',
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+      ),
+    );
+  }
+
+  String _sessionLabel(SessionType type) {
+    switch (type) {
+      case SessionType.pomodoro:
+        return 'Pomodoro';
+      case SessionType.shortBreak:
+        return 'pause courte';
+      case SessionType.longBreak:
+        return 'pause longue';
+    }
+  }
+
+  Future<void> _initializeNotifications() async {
+    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    const settings = InitializationSettings(
+      android: android,
+    );
+
+    await _notifications.initialize(settings);
   }
 
   Future<void> _loadCustomDurations() async {
