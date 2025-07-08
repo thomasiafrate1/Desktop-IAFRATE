@@ -37,11 +37,11 @@ class _HistoryPageState extends State<HistoryPage> {
   Color getTypeColor(model.SessionType type) {
     switch (type) {
       case model.SessionType.pomodoro:
-        return Colors.redAccent;
+        return const Color(0xFFEF5350); // rouge cartoon
       case model.SessionType.shortBreak:
-        return Colors.lightBlueAccent;
+        return const Color(0xFF42A5F5); // bleu cartoon
       case model.SessionType.longBreak:
-        return Colors.greenAccent;
+        return const Color(0xFF66BB6A); // vert cartoon
     }
   }
 
@@ -59,12 +59,23 @@ class _HistoryPageState extends State<HistoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFFF8F0),
       appBar: AppBar(
         title: const Text('Historique des sessions'),
+        backgroundColor: const Color(0xFFE53935),
         centerTitle: true,
       ),
       body: _sessions.isEmpty
-          ? const Center(child: Text('Aucune session enregistrée.'))
+          ? const Center(
+              child: Text(
+                'Aucune session enregistrée 💤',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontFamily: 'Poppins',
+                  color: Colors.grey,
+                ),
+              ),
+            )
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: _sessions.length,
@@ -73,27 +84,32 @@ class _HistoryPageState extends State<HistoryPage> {
                 final color = getTypeColor(session.type);
 
                 return Card(
-                  color: color.withOpacity(0.2),
+                  color: color.withOpacity(0.15),
+                  elevation: 4,
                   margin: const EdgeInsets.symmetric(vertical: 8),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
-                    side: BorderSide(color: color, width: 1.5),
+                    side: BorderSide(color: color, width: 1.2),
                   ),
                   child: ListTile(
-                    leading: Icon(
-                      getTypeIcon(session.type),
-                      color: color,
-                      size: 30,
+                    leading: CircleAvatar(
+                      backgroundColor: color.withOpacity(0.8),
+                      child: Icon(
+                        getTypeIcon(session.type),
+                        color: Colors.white,
+                      ),
                     ),
                     title: Text(
                       session.type.name.toUpperCase(),
                       style: TextStyle(
+                        fontFamily: 'Poppins',
                         fontWeight: FontWeight.bold,
                         color: color.darken(0.3),
                       ),
                     ),
                     subtitle: Text(
-                      '${formatDate(session.startTime)}\nDurée : ${formatDuration(session.duration)}',
+                      '${formatDate(session.startTime)}\n⏱ Durée : ${formatDuration(session.duration)}',
+                      style: const TextStyle(fontFamily: 'Poppins'),
                     ),
                     isThreeLine: true,
                   ),
@@ -108,7 +124,9 @@ extension ColorExtension on Color {
   Color darken([double amount = .1]) {
     assert(amount >= 0 && amount <= 1);
     final hsl = HSLColor.fromColor(this);
-    final hslDark = hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0));
+    final hslDark = hsl.withLightness(
+      (hsl.lightness - amount).clamp(0.0, 1.0),
+    );
     return hslDark.toColor();
   }
 }

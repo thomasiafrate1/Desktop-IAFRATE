@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../services/timer_service.dart';
 import '../models/session_model.dart';
+import '../services/timer_service.dart';
 
-class PomodoroTimer extends StatelessWidget {
+class PomodoroTimer extends StatefulWidget {
   const PomodoroTimer({super.key});
+
+  @override
+  State<PomodoroTimer> createState() => _PomodoroTimerState();
+}
+
+class _PomodoroTimerState extends State<PomodoroTimer> {
+  final FocusNode _focusNode = FocusNode();
 
   String _formatTime(int seconds) {
     final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
@@ -23,112 +31,145 @@ class PomodoroTimer extends StatelessWidget {
     }
   }
 
+  void _handleKey(KeyEvent event, TimerService timer) {
+    if (event is KeyDownEvent) {
+      final isCtrl = HardwareKeyboard.instance.logicalKeysPressed
+          .contains(LogicalKeyboardKey.controlLeft);
+
+      if (isCtrl) {
+        if (event.logicalKey == LogicalKeyboardKey.keyS) {
+          timer.isRunning ? timer.pauseTimer() : timer.startTimer();
+        } else if (event.logicalKey == LogicalKeyboardKey.keyR) {
+          timer.resetTimer();
+        } else if (event.logicalKey == LogicalKeyboardKey.digit1) {
+          timer.setSessionType(SessionType.pomodoro);
+        } else if (event.logicalKey == LogicalKeyboardKey.digit2) {
+          timer.setSessionType(SessionType.shortBreak);
+        } else if (event.logicalKey == LogicalKeyboardKey.digit3) {
+          timer.setSessionType(SessionType.longBreak);
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final timerService = Provider.of<TimerService>(context);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Toggle Modern Stylisé
-          ToggleButtons(
-            isSelected: [
-              timerService.currentType == SessionType.pomodoro,
-              timerService.currentType == SessionType.shortBreak,
-              timerService.currentType == SessionType.longBreak,
-            ],
-            onPressed: (index) {
-              timerService.setSessionType(SessionType.values[index]);
-            },
-            borderRadius: BorderRadius.circular(12),
-            selectedColor: Colors.white,
-            fillColor: Colors.redAccent,
-            color: Colors.white60,
-            borderColor: Colors.grey[700],
-            selectedBorderColor: Colors.redAccent,
-            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            children: const [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                child: Text('Pomodoro'),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                child: Text('Pause courte'),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                child: Text('Pause longue'),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 40),
-
-          // Timer affiché
-          Text(
-            _formatTime(timerService.remainingTime),
-            style: const TextStyle(
-              fontSize: 72,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Boutons modernes
-          Row(
+    return KeyboardListener(
+      focusNode: _focusNode,
+      autofocus: true,
+      onKeyEvent: (event) {
+        final timer = Provider.of<TimerService>(context, listen: false);
+        _handleKey(event, timer);
+      },
+      child: Consumer<TimerService>(
+        builder: (context, timer, _) {
+          return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              ElevatedButton.icon(
-                icon: Icon(
-                    timerService.isRunning ? Icons.pause : Icons.play_arrow),
-                label: Text(timerService.isRunning ? 'Pause' : 'Démarrer'),
-                onPressed: timerService.isRunning
-                    ? timerService.pauseTimer
-                    : timerService.startTimer,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 24, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              ToggleButtons(
+                isSelected: [
+                  timer.currentType == SessionType.pomodoro,
+                  timer.currentType == SessionType.shortBreak,
+                  timer.currentType == SessionType.longBreak,
+                ],
+                onPressed: (index) {
+                  final types = SessionType.values;
+                  timer.setSessionType(types[index]);
+                },
+                borderRadius: BorderRadius.circular(16),
+                selectedColor: Colors.white,
+                fillColor: const Color(0xFFEF5350), 
+                color: Colors.grey[600],
+                textStyle: const TextStyle(fontFamily: 'Poppins'),
+                children: const [
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: Text('Pomodoro'),
                   ),
-                  textStyle: const TextStyle(fontSize: 16),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: Text('Pause'),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: Text('Long Break'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 48),
+              Text(
+                _formatTime(timer.remainingTime),
+                style: const TextStyle(
+                  fontSize: 80,
+                  fontWeight: FontWeight.w800,
+                  fontFamily: 'Poppins',
+                  color: Color(0xFF388E3C), 
                 ),
               ),
-              const SizedBox(width: 20),
-              ElevatedButton.icon(
-                icon: const Icon(Icons.restart_alt),
-                label: const Text('Réinitialiser'),
-                onPressed: timerService.resetTimer,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey[700],
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 20, vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: timer.isRunning
+                        ? timer.pauseTimer
+                        : timer.startTimer,
+                    icon: Icon(
+                      timer.isRunning ? Icons.pause : Icons.play_arrow,
+                      size: 24,
+                    ),
+                    label: Text(timer.isRunning ? 'Pause' : 'Start'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEF5350),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 28, vertical: 14),
+                      textStyle: const TextStyle(
+                          fontSize: 16, fontFamily: 'Poppins'),
+                    ),
                   ),
-                  textStyle: const TextStyle(fontSize: 16),
-                ),
+                  const SizedBox(width: 16),
+                  ElevatedButton.icon(
+                    onPressed: timer.resetTimer,
+                    icon: const Icon(Icons.restart_alt, size: 24),
+                    label: const Text('Reset'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF66BB6A),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 28, vertical: 14),
+                      textStyle: const TextStyle(
+                          fontSize: 16, fontFamily: 'Poppins'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Mode actuel : ${_sessionLabel(timer.currentType)}',
+                style: const TextStyle(
+                    fontSize: 16,
+                    fontFamily: 'Poppins',
+                    fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '🎹 Ctrl+S: Start/Pause  |  Ctrl+R: Reset  |  Ctrl+1/2/3: Mode',
+                style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey,
+                    fontFamily: 'Poppins',
+                    fontStyle: FontStyle.italic),
               ),
             ],
-          ),
-
-          const SizedBox(height: 24),
-
-          Text(
-            'Mode actuel : ${_sessionLabel(timerService.currentType)}',
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.white70,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

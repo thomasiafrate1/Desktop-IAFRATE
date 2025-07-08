@@ -40,19 +40,31 @@ class _SettingsPageState extends State<SettingsPage> {
     await prefs.setInt('longBreakDuration', longBreak);
 
     if (!mounted) return;
-    Navigator.pop(context, true); // retourne à la Home
+    Navigator.pop(context, true);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Réglages des durées')),
+      backgroundColor: const Color(0xFFFFF8F0),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFE53935),
+        title: const Text(
+          'Réglages des durées',
+          style: TextStyle(fontFamily: 'Poppins'),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: ListView(
           children: [
-            const Text('Durées en minutes :',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Durées en minutes :',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  fontFamily: 'Poppins', color: Colors.black),
+            ),
             const SizedBox(height: 16),
             _buildNumberField('Pomodoro', _pomodoroController),
             _buildNumberField('Pause courte', _shortBreakController),
@@ -62,6 +74,17 @@ class _SettingsPageState extends State<SettingsPage> {
               onPressed: _saveDurations,
               icon: const Icon(Icons.save),
               label: const Text('Enregistrer'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF66BB6A),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                textStyle: const TextStyle(
+                    fontSize: 16, fontFamily: 'Poppins', fontWeight: FontWeight.w600, color: Colors.black),
+              ),
             )
           ],
         ),
@@ -75,9 +98,15 @@ class _SettingsPageState extends State<SettingsPage> {
       child: TextField(
         controller: controller,
         keyboardType: TextInputType.number,
+        style: const TextStyle(fontFamily: 'Poppins', color: Colors.black),
         decoration: InputDecoration(
           labelText: label,
-          border: const OutlineInputBorder(),
+          labelStyle: const TextStyle(fontFamily: 'Poppins'),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          filled: true,
+          fillColor: Colors.white,
         ),
       ),
     );
